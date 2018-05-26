@@ -3,6 +3,7 @@ from scipy.io import wavfile
 from tqdm import tqdm
 
 
+# обычный генератор
 def datagenerator(df, params, mode='train'):
     idx = np.arange(len(df))
 
@@ -13,6 +14,7 @@ def datagenerator(df, params, mode='train'):
             fname = df.iloc[i].fname
             label = df.iloc[i].label
             try:
+                # todo: добавить аугментаций
                 _, wav = wavfile.read(fname)
                 wav = wav.astype(np.float32) / np.iinfo(np.int16).max
                 L = 8000
@@ -20,10 +22,11 @@ def datagenerator(df, params, mode='train'):
                     continue
                 beg = np.random.randint(0, len(wav) - L)
 
+                # важно чтобы все значения в словаре были нумпайными
                 yield dict(
                     target=np.int32(label),
                     wav=wav[beg: beg + L],
-                    fname=np.string_(fname),
+                    fname=np.string_(fname),  # <<< NB
                 )
 
             except Exception as err:
@@ -32,6 +35,7 @@ def datagenerator(df, params, mode='train'):
     return generator
 
 
+# генератор с предзагрузкой датасета в память, требует памяти
 def fast_datagenerator(df, params, mode='train'):
     def _read(fname):
         _, wav = wavfile.read(fname)

@@ -14,7 +14,7 @@ def baseline(x, params, is_training):
 
     gap = tf.reduce_mean(x, axis=[1, 2], keep_dims=True)
 
+    # вместо полносвязного слоя удобно взять свертку 1х1 на нужное количество классов
     x = tf.layers.conv2d(gap, params.num_classes, 1, activation=None)
-    print('VERY END:', x)
 
     return tf.squeeze(x, [1, 2])

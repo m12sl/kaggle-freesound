@@ -1,5 +1,4 @@
 import argparse
-import numpy as np
 import tensorflow as tf
 import os
 import pandas as pd
@@ -20,6 +19,7 @@ def _parse_args():
 
 
 def main(args):
+    # восстанавливаем сохраненые конфиги и словарь
     with open(os.path.join(args.modeldir, 'hparams.json'), 'r') as fin:
         params = json.load(fin)
 
@@ -28,13 +28,16 @@ def main(args):
         vocab = {int(k): v for k, v in vocab.items()}
 
     hparams = tf.contrib.training.HParams(**params)
+    # все тот же костыль для некоторых машин
     session_config = tf.ConfigProto()
     session_config.gpu_options.allow_growth = True
     run_config = tf.estimator.RunConfig(
         model_dir=args.modeldir, session_config=session_config)
 
+    # создаем модельку
     model = base.create_model(config=run_config, hparams=hparams)
 
+    # готовим данные для теста из sample_submission
     df = pd.read_csv(os.path.join(args.datadir, 'sample_submission.csv'))
     df.label = 0
     df.fname = [
@@ -49,8 +52,10 @@ def main(args):
         queue_capacity=hparams.batch_size,
         num_threads=1
     )
-    it = model.predict(input_fn=test_input_fn)
 
+    it = model.predict(input_fn=test_input_fn)  # это итератор
+
+    # далее немного грязно, отрефакторите, добавьте информацию о фолдах, если нужно
     submission = dict()
     for t in tqdm(it):
         path = t['fname'].decode()

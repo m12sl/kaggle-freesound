@@ -27,6 +27,7 @@ def _parse_args():
 
 
 def main(args):
+    # просто создадим две папки для текущего эксперимента exp и exp/eval
     os.makedirs(os.path.join(args.outdir, 'eval'), exist_ok=True)
 
     df = pd.read_csv(os.path.join(args.datadir, 'train.csv'))
@@ -35,31 +36,39 @@ def main(args):
     label2id = {label: i for i, label in enumerate(labels)}
     id2label = {i: label for label, i in label2id.items()}
 
-    with open(os.path.join(args.outdir, 'vocab.json'), 'w') as fout:
-        json.dump(id2label, fout, indent=2)
+
 
     df['label'] = [label2id[_] for _ in df.label.values]
     df['fname'] = [
         os.path.join(args.datadir, 'audio_train', _) for _ in df.fname.values]
 
+    # todo: разберитесь с форматом входных данных, потюньте процедуру разбиения
+    # можно добавить фолды, балансировать классы или разбивать по флагу ручной разметки
     idx = np.arange(len(df))
     idx_train, idx_val = train_test_split(
         idx, test_size=0.33, random_state=2018, shuffle=True)
     df_train, df_val = df.iloc[idx_train], df.iloc[idx_val]
 
-    # todo: get it from args
     params = {'num_classes': len(labels), **args.__dict__}
-
     hparams = tf.contrib.training.HParams(**params)
 
+    # сохраним два файла: с параметрами модели, пригодится, когда параметры будут определять строение сетки
     with open(os.path.join(args.outdir, 'hparams.json'), 'w') as fout:
         json.dump(params, fout, indent=2)
 
+    # словарь с метками для обратного преобразования
+    with open(os.path.join(args.outdir, 'vocab.json'), 'w') as fout:
+        json.dump(id2label, fout, indent=2)
+
+    # маленький странный костыль, нужен не на всех машинах.
+    # На некоторых помогает от странной ошибки CUDNN
+    # ¯\_(ツ)_/¯
     session_config = tf.ConfigProto()
     session_config.gpu_options.allow_growth = True
     run_config = tf.estimator.RunConfig(
         model_dir=args.outdir, session_config=session_config)
 
+    # Написано что deprecated, но простой замены пока не нашлось, если придумаете -- напишите :)
     train_input_fn = generator_input_fn(
         x=utils.fast_datagenerator(df_train, hparams, 'train'),
         target_key='target',
@@ -80,6 +89,7 @@ def main(args):
         num_threads=1,
     )
 
+    # создаем модельку и треним ее
     est = base.create_model(config=run_config, hparams=hparams)
 
     train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn)
