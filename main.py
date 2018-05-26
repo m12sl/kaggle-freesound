@@ -1,3 +1,4 @@
+from __future__ import print_function
 import argparse
 import numpy as np
 import tensorflow as tf
@@ -36,8 +37,6 @@ def main(args):
     label2id = {label: i for i, label in enumerate(labels)}
     id2label = {i: label for label, i in label2id.items()}
 
-
-
     df['label'] = [label2id[_] for _ in df.label.values]
     df['fname'] = [
         os.path.join(args.datadir, 'audio_train', _) for _ in df.fname.values]
@@ -49,7 +48,9 @@ def main(args):
         idx, test_size=0.33, random_state=2018, shuffle=True)
     df_train, df_val = df.iloc[idx_train], df.iloc[idx_val]
 
-    params = {'num_classes': len(labels), **args.__dict__}
+    params = dict(num_classes=len(labels))
+    params.update(**args.__dict__)
+
     hparams = tf.contrib.training.HParams(**params)
 
     # сохраним два файла: с параметрами модели, пригодится, когда параметры будут определять строение сетки

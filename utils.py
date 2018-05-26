@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from scipy.io import wavfile
 from tqdm import tqdm

@@ -67,7 +67,7 @@ def main(args):
     with open(os.path.join(args.modeldir, 'submission.csv'), 'w') as fout:
         fout.write('fname,label\n')
         for fname, label in submission.items():
-            fout.write(f"{fname},{label}\n")
+            fout.write("{},{}\n".format(fname, label))
 
 
 if __name__ == "__main__":
