@@ -9,7 +9,8 @@ def baseline(x, params, is_training):
     )
 
     for i in range(3):
-        tf.nn.dropout(x, 0.9 if is_training else 1.0)
+        if is_training:
+            x = tf.nn.dropout(x, 0.9)
         x = layers.conv2d(x, 16 * (2 ** i), (3, 11), **afn)
         x = layers.max_pool2d(x, 2, 2)
 
