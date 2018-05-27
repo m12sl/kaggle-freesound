@@ -60,6 +60,11 @@ def model_handler(features, labels, mode, params, config):
 
     if mode == tf.estimator.ModeKeys.EVAL:
         acc, acc_op = tf.metrics.accuracy(labels, tf.argmax(logits, axis=-1))
+        # см https://www.kaggle.com/c/freesound-audio-tagging#evaluation
+        # метрика оценки mean average precision at 3 (MAP@3)
+        # нужно чтобы среди трех топовых предсказаний была правильная метка
+        map3, map3_op = tf.metrics.average_precision_at_k(
+            tf.cast(labels, tf.int64), predictions, 3)
         loss = tf.reduce_mean(
             tf.nn.sparse_softmax_cross_entropy_with_logits(
                 labels=labels, logits=logits)
@@ -67,15 +72,17 @@ def model_handler(features, labels, mode, params, config):
         specs = dict(
             mode=mode,
             loss=loss,
-            eval_metric_ops=dict(
-                acc=(acc, acc_op),
-            )
+            eval_metric_ops={
+                "MAP@1": (acc, acc_op),
+                "MAP@3": (map3, map3_op),
+            }
         )
 
     if mode == tf.estimator.ModeKeys.PREDICT:
         predictions = {
             # здесь можно пробрасывать что угодно
             'predictions': predictions,  # весь вектор предсказаний
+            'top3': tf.nn.top_k(predictions, 3)[1],  # топ-3 метки
             'prediction': tf.argmax(predictions, 1),  # топовая метка
             'fname': features['fname'],  # имя файла, удобный ход
         }
