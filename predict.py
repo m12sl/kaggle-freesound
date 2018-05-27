@@ -44,30 +44,34 @@ def main(args):
         os.path.join(args.datadir, 'audio_test', _)
         for _ in df.fname.values]
 
+    # predict все равно работает по одному примеру, так что давайте уберем батчи
+    # так мы сможем работать с записями целиком
+    # NB: стоит проверить, правильно ли работает pad_value
     test_input_fn = generator_input_fn(
         x=utils.fast_datagenerator(df, params, 'test'),
-        batch_size=hparams.batch_size,
+        batch_size=1,
         shuffle=False,
         num_epochs=1,
         queue_capacity=hparams.batch_size,
-        num_threads=1
+        num_threads=1,
+        pad_value=0.0,
     )
 
     it = model.predict(input_fn=test_input_fn)  # это итератор
 
     # далее немного грязно, отрефакторите, добавьте информацию о фолдах, если нужно
     submission = dict()
-    for t in tqdm(it):
-        path = t['fname'].decode()
+    for output in tqdm(it):
+        path = output['fname'].decode()
         fname = os.path.basename(path)
-        predicted = vocab[t['prediction']]
-
+        # допускается предсказывать три метки на каждую запись
+        predicted = " ".join([vocab[i] for i in output['top3']])
         submission[fname] = predicted
 
     with open(os.path.join(args.modeldir, 'submission.csv'), 'w') as fout:
         fout.write('fname,label\n')
-        for fname, label in submission.items():
-            fout.write("{},{}\n".format(fname, label))
+        for fname, pred in submission.items():
+            fout.write("{},{}\n".format(fname, pred))
 
 
 if __name__ == "__main__":

@@ -54,16 +54,24 @@ def fast_datagenerator(df, params, mode='train'):
         for i in idx:
             fname, wav, label = data[i]
             try:
-                L = 8000
-                if len(wav) < L:
-                    continue
-                beg = np.random.randint(0, len(wav) - L)
+                if mode == 'test':
+                    yield dict(
+                        target=np.int32(label),
+                        wav=wav,
+                        fname=np.string_(fname),
+                    )
 
-                yield dict(
-                    target=np.int32(label),
-                    wav=wav[beg: beg + L],
-                    fname=np.string_(fname),
-                )
+                else:
+                    L = 8000
+                    if len(wav) < L:
+                        continue
+                    beg = np.random.randint(0, len(wav) - L)
+
+                    yield dict(
+                        target=np.int32(label),
+                        wav=wav[beg: beg + L],
+                        fname=np.string_(fname),
+                    )
 
             except Exception as err:
                 print(err, fname)
