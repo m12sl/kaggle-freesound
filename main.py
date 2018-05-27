@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 import argparse
 import numpy as np
@@ -29,7 +30,10 @@ def _parse_args():
 
 def main(args):
     # просто создадим две папки для текущего эксперимента exp и exp/eval
-    os.makedirs(os.path.join(args.outdir, 'eval'), exist_ok=True)
+    try:
+        os.makedirs(os.path.join(args.outdir, 'eval'))
+    except OSError:
+        pass
 
     df = pd.read_csv(os.path.join(args.datadir, 'train.csv'))
     labels = sorted(set(df.label.values))
@@ -63,7 +67,6 @@ def main(args):
 
     # маленький странный костыль, нужен не на всех машинах.
     # На некоторых помогает от странной ошибки CUDNN
-    # ¯\_(ツ)_/¯
     session_config = tf.ConfigProto()
     session_config.gpu_options.allow_growth = True
     run_config = tf.estimator.RunConfig(

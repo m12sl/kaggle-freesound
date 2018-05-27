@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 import tensorflow as tf
 from tensorflow.contrib import signal
@@ -63,7 +64,7 @@ def model_handler(features, labels, mode, params, config):
         # см https://www.kaggle.com/c/freesound-audio-tagging#evaluation
         # метрика оценки mean average precision at 3 (MAP@3)
         # нужно чтобы среди трех топовых предсказаний была правильная метка
-        map3, map3_op = tf.metrics.average_precision_at_k(
+        map3, map3_op = tf.metrics.sparse_average_precision_at_k(
             tf.cast(labels, tf.int64), predictions, 3)
         loss = tf.reduce_mean(
             tf.nn.sparse_softmax_cross_entropy_with_logits(
