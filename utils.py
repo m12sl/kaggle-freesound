@@ -3,6 +3,29 @@ from __future__ import print_function
 import numpy as np
 from scipy.io import wavfile
 from tqdm import tqdm
+import os
+import re
+
+
+def get_new_model_path(path, suffix=''):
+    numered_runs = []
+    for x in os.listdir(path):
+        r = re.match('(\d+)', x)
+        if r:
+            numered_runs.append((os.path.join(path, x), int(r.group())))
+
+    numered_runs.sort(key=lambda t: t[1])
+    if len(numered_runs) == 0:
+        new_number = 0
+    else:
+        _, nums = zip(*numered_runs)
+        new_number = nums[-1] + 1
+    if suffix != '':
+        suffix = '_' + suffix
+    t = os.path.join(path, '{}{}'.format(new_number, suffix))
+    os.mkdir(t)
+    os.mkdir(os.path.join(t, 'eval'))
+    return t
 
 
 # обычный генератор
