@@ -71,29 +71,27 @@ def fast_datagenerator(df, params, mode='train'):
     data = [
         (df.iloc[i].fname, _read(df.iloc[i].fname), df.iloc[i].label)
         for i in tqdm(idx)]
-
+    L = 8000
     def generator():
         if mode == 'train':
             np.random.shuffle(idx)
         for i in idx:
             fname, wav, label = data[i]
             try:
+                _wav = np.concatenate([np.zeros(L//2, dtype=np.float32), wav, np.zeros(L//2, dtype=np.float32)])
                 if mode == 'test':
                     yield dict(
                         target=np.int32(label),
                         wav=wav,
                         fname=np.string_(fname),
                     )
-
                 else:
-                    L = 8000
-                    if len(wav) < L:
-                        continue
-                    beg = np.random.randint(0, len(wav) - L)
+                    beg = np.random.randint(0, len(_wav) - L)
+                    _wav = _wav[beg: beg + L]
 
                     yield dict(
                         target=np.int32(label),
-                        wav=wav[beg: beg + L],
+                        wav=_wav,
                         fname=np.string_(fname),
                     )
 
